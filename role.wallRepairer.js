@@ -1,64 +1,52 @@
-var roleBuilder = require('role.builder');
+var utils = require('utils');
 
-var roleWallRepairer = {
-    run: function(creep) {
-        var container = creep.pos.findClosestByRange(FIND_STRUCTURES, {filter: function (s) {
-            return s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
-        }});
-        
-	    if(creep.memory.mode == 'load') {
-            if(creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(container);
+module.exports = {
+    name: 'wallRepairer',
+
+    moreNeededNow: function (room) {
+        return utils.countRole(this.name, room) === 0;
+    },
+
+    moreNeeded: function (room) {
+        return utils.countRole(this.name, room) < Math.ceil(room.find(FIND_STRUCTURES, {filter: function(s) { return s.structureType == STRUCTURE_WALL; }}).length / 10);
+    },
+
+    getBody: function (spawn) {
+        return [WORK, CARRY, MOVE];
+    },
+
+    run: function (creep) {
+        if (creep.memory.mode === 0) {
+            if (utils.harvestFromSource(creep) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(utils.findSource(creep));
             }
-            
-            if (container != null && container.store[RESOURCE_ENERGY] == 0) {
-                container = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
-                if (creep.pickup(container) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(container);
-                }
+
+            if (creep.carry.energy == creep.carryCapacity) {
+                creep.memory.mode = 1;
+                creep.say('repairing');
             }
-            
-            if (creep.carry.energy >= creep.carryCapacity) {
-                creep.memory.mode = 'unload';
-            }
-        }
-        else {
-            var targets = creep.room.find(FIND_STRUCTURES, {
-                filter: (o) => (o.structureType == STRUCTURE_WALL)
-            });
-            
+        } else {
+            var targets = creep.room.find(FIND_STRUCTURES, {filter: function (a) {
+                return a.structureType == STRUCTURE_WALL && a.hits < a.hitsMax;
+            }});
+
             targets = targets.sort(function (a, b) {
-                if (a.hits * creep.pos.getRangeTo(a) < b.hits * creep.pos.getRangeTo(b)) {
-                    return -1;
-                } else if (a.hits * creep.pos.getRangeTo(a) == b.hits * creep.pos.getRangeTo(b)) {
-                    return 0;
-                } else {
-                    return 1;
-                }
+                return (a.hits / a.hitsMax) - (b.hits / b.hitsMax);
             });
-            
-            var target = targets[0];
-            
-            if (target != undefined) {
-                var attempt = creep.repair(target);
-                if (attempt == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                } else if (attempt == ERR_NO_BODYPART) {
-                    creep.suicide();
-                }
-            } else {
-                roleBuilder.run(creep);
-            }
-            
-            if (creep.carry.energy == 0) {
-                creep.memory.mode = 'load';
-            }
-        }
-        
-        if (creep.memory.mode == undefined) {
-            creep.memory.mode = 'load';
-        }
-	}
-};
 
-module.exports = roleWallRepairer;
+            var target = targets[0];
+
+            if (creep.repair(target) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(target);
+            }
+
+            if (creep.carry.energy === 0) {
+                creep.memory.mode = 0;
+            }
+        }
+    },
+
+    init: function (creep) {
+        creep.memory.mode = 0;
+    }
+}

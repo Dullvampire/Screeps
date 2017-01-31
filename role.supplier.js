@@ -1,41 +1,39 @@
+var utils = require('utils')
+
 module.exports = {
-    run: function(creep) {
-        var target = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {filter: (o) => o.structureType == STRUCTURE_TOWER});
-        var source = creep.pos.findClosestByRange(FIND_STRUCTURES, {filter: function (s) {
-            return s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
-        }});
-        
-        if (target == undefined) {
-            target = creep.pos.findClosestByRange(FIND_MY_SPAWNS);
-        }
-        
-	    if(creep.memory.mode == 'load') {
-            if(creep.withdraw(source, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(source);
+    name: 'supplier',
+
+    moreNeededNow: function (room) {
+        return utils.countRole(this.name, room) < room.find(FIND_MY_STRUCTURES, {filter: function (a) { return a.structureType == STRUCTURE_TOWER; }}).length;
+    },
+
+    run: function (creep) {
+        if (creep.memory.mode === 0) {
+            if (utils.harvestFromSource(creep) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(utils.findSource(creep));
             }
-            
-            if ((source != null && source.store[RESOURCE_ENERGY] == 0 && target.energy < target.energyCapacity) || (source == null)) {
-                source = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
-                if (creep.pickup(source) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(source);
-                }
-           }
-            
-            if (creep.carry.energy >= creep.carryCapacity) {
-                creep.memory.mode = 'unload';
+
+            if (creep.carry.energy == creep.carryCapacity) {
+                creep.memory.mode = 1;
             }
         } else {
-            if(creep.transfer(target, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(target);
+            if (creep.transfer(Game.getObjectById(creep.memory.sid), RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(Game.getObjectById(creep.memory.sid));
             }
-            
-            if (creep.carry.energy == 0) {
-                creep.memory.mode = 'load';
+
+            if (creep.carry.energy === 0) {
+                creep.memory.mode = 0;
             }
         }
-        
-        if (creep.memory.mode == undefined) {
-            creep.memory.mode = 'load';
-        }
-	}
-};
+    },
+
+    getBody: function (spawn) {
+        let body = [CARRY, CARRY, MOVE, MOVE];
+        return body
+    },
+
+    init: function (creep) {
+        creep.memory.mode = 0;
+        creep.memory.sid = creep.pos.findClosestByRange(FIND_MY_STRUCTURES, {filter: function (a) { return a.structureType == STRUCTURE_TOWER; }}).id;
+    }
+}

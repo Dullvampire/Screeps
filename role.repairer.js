@@ -1,52 +1,62 @@
-var roleBuilder = require('role.builder');
+var utils = require('utils');
 
-var roleUpgrader = {
-    run: function(creep) {
-        var container = creep.pos.findClosestByRange(FIND_STRUCTURES, {filter: function (s) {
-            return s.structureType == STRUCTURE_CONTAINER && s.store[RESOURCE_ENERGY] > 0;
-        }});
-        
-	    if(creep.memory.mode == 'load') {
-            if(creep.withdraw(container, RESOURCE_ENERGY) == ERR_NOT_IN_RANGE) {
-                creep.moveTo(container);
+module.exports = {
+    name: 'repairer',
+
+    moreNeededNow: function (room) {
+        return utils.countRole(this.name, room) === 0;
+    },
+
+    moreNeeded: function (room) {
+        return utils.countRole(this.name, room) < Math.ceil(room.find(FIND_STRUCTURES).length / 10);
+    },
+
+    getBody: function (spawn) {
+        let body = [WORK, CARRY, MOVE, MOVE];
+
+        return body;
+    },
+
+    run: function (creep) {
+        if (creep.memory.mode === 0) {
+            if (utils.harvestFromSource(creep) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(utils.findSource(creep));
             }
-            
-            if (container != null && container.store[RESOURCE_ENERGY] == 0) {
-                container = creep.pos.findClosestByPath(FIND_DROPPED_RESOURCES);
-                if (creep.pickup(container) == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(container);
-                }
+
+            if (creep.carry.energy == creep.carryCapacity) {
+                creep.memory.mode = 1;
+                creep.say('repairing');
             }
-            
-            if (creep.carry.energy >= creep.carryCapacity) {
-                creep.memory.mode = 'unload';
+        } else {
+            if (Memory.repCpu == undefined) {
+                Memory.repCpu = [0, 0];
             }
-        }
-        else {
-            var target = creep.pos.findClosestByRange(FIND_STRUCTURES, {
-                filter: (o) => (o.hits < o.hitsMax && o.structureType != STRUCTURE_WALL)
+
+            var t = Game.cpu.getUsed();
+            var targets = creep.room.find(FIND_STRUCTURES, {filter: function (a) {
+                return a.structureType != STRUCTURE_WALL && a.hits < a.hitsMax;
+            }});
+            Memory.repCpu[0] += Game.cpu.getUsed() - t;
+
+            targets = targets.sort(function (a, b) {
+                return (a.hits / a.hitsMax) - (b.hits / b.hitsMax);
             });
-            
-            if (target != undefined) {
-                var attempt = creep.repair(target);
-                if (attempt == ERR_NOT_IN_RANGE) {
-                    creep.moveTo(target);
-                } else if (attempt == ERR_NO_BODYPART) {
-                    creep.suicide();
-                }
-            } else {
-                roleBuilder.run(creep);
-            }
-            
-            if (creep.carry.energy == 0) {
-                creep.memory.mode = 'load';
-            }
-        }
-        
-        if (creep.memory.mode == undefined) {
-            creep.memory.mode = 'load';
-        }
-	}
-};
+            Memory.repCpu[1] += Game.cpu.getUsed() - t;
+            t = Game.cpu.getUsed();
 
-module.exports = roleUpgrader;
+            var target = targets[0];
+
+            if (creep.repair(target) == ERR_NOT_IN_RANGE) {
+                creep.moveTo(target);
+            }
+
+            if (creep.carry.energy === 0) {
+                creep.memory.mode = 0;
+            }
+        }
+    },
+
+    init: function (creep) {
+        creep.memory.mode = 0;
+    }
+}
