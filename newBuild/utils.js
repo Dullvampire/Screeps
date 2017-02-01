@@ -16,6 +16,8 @@ module.exports = {
 
     getPathTo: function (pos, goals) {
         return PathFinder.search(pos, goals, { plainCost: 2, swampCost: 10, roomCallback: function(roomName) {
+            let room = Game.rooms[roomName];
+
             if (!room) return;
 
             let costs = PathFinder.CostMatrix;
