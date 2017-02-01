@@ -46,7 +46,7 @@ module.exports = {
 
             var range = 0;
 
-            if (Game.map.getTerrainAt(goal)) {
+            if (Game.map.getTerrainAt(goal) == 'wall') {
                 range = 1;
             }
 
