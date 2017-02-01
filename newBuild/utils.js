@@ -51,7 +51,7 @@ module.exports = {
                     range = 1;
                 }
 
-                creep.memory.pathToFollow = {goalPos: goal, path: Room.serializePath(this.getPathTo(creep.pos, {pos: goal, range: range}))};
+                creep.memory.pathToFollow = {goalPos: goal, path: this.getPathTo(creep.pos, {pos: goal, range: range})};
             }
             if (creep.memory.pathToFollow) {
                 creep.moveByPath(creep.memory.pathToFollow.path);
