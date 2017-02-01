@@ -15,7 +15,7 @@ module.exports = {
     },
 
     getPathTo: function (pos, goals) {
-        return PathFinder.search(pos, goals, { plainCost: 2, swampCost: 10, roomCallback: function(roomName) {
+        let path = PathFinder.search(pos, goals, { plainCost: 2, swampCost: 10, roomCallback: function(roomName) {
             let room = Game.rooms[roomName];
 
             if (!room) return;
@@ -35,7 +35,16 @@ module.exports = {
             });
 
             return costs;
-        }}).path;
+        }});
+
+        for (let i in path) {
+            if (i > 0) {
+                path[i].dx = path[i].x - path[i - 1].x;
+                path[i].dy = path[i].y - path[i - 1].y;
+            }
+        }
+
+        return path;
     },
 
     travelTo: function(creep, goal) {
@@ -53,6 +62,7 @@ module.exports = {
 
                 creep.memory.pathToFollow = {goalPos: goal, path: this.getPathTo(creep.pos, {pos: goal, range: range})};
             }
+
             if (creep.memory.pathToFollow) {
                 creep.moveByPath(creep.memory.pathToFollow.path);
             }
