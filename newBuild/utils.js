@@ -20,7 +20,7 @@ module.exports = {
 
             if (!room) return;
 
-            let costs = PathFinder.CostMatrix;
+            let costs = new PathFinder.CostMatrix;
 
             room.find(FIND_STRUCTURES).forEach(function(structure) {
                 if (structure.structureType === STRUCTURE_ROAD) {
@@ -35,7 +35,7 @@ module.exports = {
             });
 
             return costs;
-        }});
+        }}).path;
     },
 
     travelTo: function(creep, goal) {
