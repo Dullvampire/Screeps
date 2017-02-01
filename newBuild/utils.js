@@ -39,25 +39,27 @@ module.exports = {
     },
 
     travelTo: function(creep, goal) {
-        if (!creep.memory.pathToFollow) {
-            if (goal.pos) {
-                goal = goal.pos;
+        if (!creep.spawning) {
+            if (!creep.memory.pathToFollow) {
+                if (goal.pos) {
+                    goal = goal.pos;
+                }
+
+                var range = 0;
+
+                if (Game.map.getTerrainAt(goal) == 'wall') {
+                    range = 1;
+                }
+
+                creep.memory.pathToFollow = {goalPos: goal, path: Room.serializePath(this.getPathTo(creep.pos, {pos: goal, range: range}))};
+            }
+            if (creep.memory.pathToFollow) {
+                creep.moveByPath(creep.memory.pathToFollow.path);
             }
 
-            var range = 0;
-
-            if (Game.map.getTerrainAt(goal) == 'wall') {
-                range = 1;
+            if (creep.pos.isEqualTo(creep.memory.pathToFollow.goalPos)) {
+                delete creep.memory.pathToFollow;
             }
-
-            creep.memory.pathToFollow = {goalPos: goal, path: Room.serializePath(this.getPathTo(creep.pos, {pos: goal, range: range}))};
-        }
-        if (creep.memory.pathToFollow) {
-            creep.moveByPath(creep.memory.pathToFollow.path);
-        }
-
-        if (creep.pos.isEqualTo(creep.memory.pathToFollow.goalPos)) {
-            delete creep.memory.pathToFollow;
         }
     }
 }
