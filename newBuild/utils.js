@@ -37,7 +37,7 @@ module.exports = {
             return costs;
         }});
 
-        return path;
+        return path.path;
     },
 
     travelTo: function(creep, goal) {
@@ -56,12 +56,13 @@ module.exports = {
                 creep.memory.pathToFollow = {goalPos: goal, path: this.getPathTo(creep.pos, {pos: goal, range: range})};
             }
 
-            if (creep.memory.pathToFollow) {
+            if (creep.memory.pathToFollow !== undefined) {
                 creep.move(creep.pos.getDirectionTo(creep.memory.pathToFollow.path[0].x, creep.memory.pathToFollow.path[0].y));
-                creep.memory.pathToFollow.path.unshift();
+                console.log(creep.pos.x + ', ' + creep.pos.y + ' | ' + creep.memory.pathToFollow.path[0].x + ', ' + creep.memory.pathToFollow.path[0].y + ' - ' + creep.pos.getDirectionTo(creep.memory.pathToFollow.path[0].x, creep.memory.pathToFollow.path[0].y));
+                creep.memory.pathToFollow.path.shift();
             }
 
-            if (creep.memory.pathToFollow.path.length === 0) {
+            if (creep.memory.pathToFollow.path.length == 0) {
                 delete creep.memory.pathToFollow;
             }
         }
