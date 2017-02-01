@@ -37,13 +37,6 @@ module.exports = {
             return costs;
         }});
 
-        for (let i in path) {
-            if (i > 0) {
-                path[i].dx = path[i].x - path[i - 1].x;
-                path[i].dy = path[i].y - path[i - 1].y;
-            }
-        }
-
         return path;
     },
 
@@ -64,10 +57,11 @@ module.exports = {
             }
 
             if (creep.memory.pathToFollow) {
-                creep.moveByPath(creep.memory.pathToFollow.path);
+                creep.move(creep.pos.getDirectionTo(creep.memory.pathToFollow.path[0].x, creep.memory.pathToFollow.path[0].y));
+                creep.memory.pathToFollow.path.unshift();
             }
 
-            if (creep.pos.isEqualTo(creep.memory.pathToFollow.goalPos)) {
+            if (creep.memory.pathToFollow.path.length === 0) {
                 delete creep.memory.pathToFollow;
             }
         }
