@@ -40,30 +40,31 @@ module.exports = {
         return path.path;
     },
 
-    travelTo: function(creep, goal) {
+    travelTo: function(creep, goal, range) {
         if (!creep.spawning) {
             if (!creep.memory.pathToFollow) {
                 if (goal.pos) {
                     goal = goal.pos;
                 }
 
-                var range = 0;
+                if (range === undefined) {
+                    var range = 0;
 
-                if (Game.map.getTerrainAt(goal) == 'wall') {
-                    range = 1;
+                    if (Game.map.getTerrainAt(goal) == 'wall') {
+                        range = 1;
+                    }
                 }
 
                 creep.memory.pathToFollow = {goalPos: goal, path: this.getPathTo(creep.pos, {pos: goal, range: range})};
             }
 
-            if (creep.memory.pathToFollow !== undefined) {
-                creep.move(creep.pos.getDirectionTo(creep.memory.pathToFollow.path[0].x, creep.memory.pathToFollow.path[0].y));
-                console.log(creep.pos.x + ', ' + creep.pos.y + ' | ' + creep.memory.pathToFollow.path[0].x + ', ' + creep.memory.pathToFollow.path[0].y + ' - ' + creep.pos.getDirectionTo(creep.memory.pathToFollow.path[0].x, creep.memory.pathToFollow.path[0].y));
-                creep.memory.pathToFollow.path.shift();
+            if (creep.memory.pathToFollow.path.length === 0) {
+                delete creep.memory.pathToFollow;
             }
 
-            if (creep.memory.pathToFollow.path.length == 0) {
-                delete creep.memory.pathToFollow;
+            if (creep.memory.pathToFollow !== undefined) {
+                creep.move(creep.pos.getDirectionTo(creep.memory.pathToFollow.path[0].x, creep.memory.pathToFollow.path[0].y));
+                creep.memory.pathToFollow.path.shift();
             }
         }
     }
